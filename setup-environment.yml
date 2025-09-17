@@ -1,0 +1,68 @@
+---
+- name: Setup complete development environment for Python
+  hosts: all
+  become: yes
+
+  vars:
+    python_project_dir: /opt/python-boilerplate
+    python_repo_url: "https://github.com/Retouch-It-Services/devOps-retouch-python-fastapi-boilerplate.git"
+
+  tasks:
+    
+    - name: Update apt repositories
+      apt:
+        update_cache: yes
+
+    - name: Install essential development tools
+      apt:
+        name:
+          - git
+          - curl
+          - unzip
+          - wget
+          - build-essential
+          - software-properties-common
+        state: present
+
+    
+    
+    - name: Install Python and pip
+      apt:
+        name:
+          - python3
+          - python3-pip
+          - python3-venv
+        state: present
+
+    - name: Ensure target directory exists
+      file:
+        path: "{{ python_project_dir }}"
+        state: directory
+        owner: root
+        group: root
+        mode: '0755'
+
+    - name: Clone Python boilerplate repository
+      git:
+        repo: "{{ python_repo_url }}"
+        dest: "{{ python_project_dir }}"
+        version: main
+        force: yes
+
+    - name: Create Python virtual environment
+      command: python3 -m venv {{ python_project_dir }}/venv
+      args:
+        creates: "{{ python_project_dir }}/venv/bin/activate"
+
+    - name: Install dependencies if requirements.txt exists
+      pip:
+        requirements: "{{ python_project_dir }}/requirements.txt"
+        virtualenv: "{{ python_project_dir }}/venv"
+      ignore_errors: yes
+
+    - name: Set permissions for project directory
+      file:
+        path: "{{ python_project_dir }}"
+        owner: root
+        group: root
+        recurse: yes
